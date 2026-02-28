@@ -1,17 +1,14 @@
 "use client"
 
-import { useActionState, useEffect, useRef, useState } from "react"
-import { login, signInWithGoogle, signInWithEmail } from "@/lib/actions/auth"
+import { useActionState } from "react"
+import { login, signInWithGoogle } from "@/lib/actions/auth"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 
 export default function LoginPage() {
     const [state, action, pending] = useActionState(login, undefined)
-    const [emailState, emailAction, emailPending] = useActionState(signInWithEmail, undefined)
-    const [view, setView] = useState<"password" | "magic-link">("password")
     const searchParams = useSearchParams()
     const justRegistered = searchParams.get("registered") === "true"
-    const linkSent = searchParams.get("sent") === "true"
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 flex items-center justify-center p-4">
@@ -36,14 +33,9 @@ export default function LoginPage() {
                             ✓ Account created! Please sign in.
                         </div>
                     )}
-                    {linkSent && (
-                        <div className="bg-blue-500/15 border border-blue-500/30 text-blue-400 text-sm rounded-lg px-4 py-3 mb-6">
-                            ✉ Magic link sent! Check your inbox.
-                        </div>
-                    )}
-                    {(state?.error || emailState?.error) && (
+                    {state?.error && (
                         <div className="bg-red-500/15 border border-red-500/30 text-red-400 text-sm rounded-lg px-4 py-3 mb-6">
-                            {state?.error || emailState?.error}
+                            {state.error}
                         </div>
                     )}
 
@@ -84,81 +76,39 @@ export default function LoginPage() {
                         </div>
                     </div>
 
-                    {/* View Switcher */}
-                    <div className="flex bg-white/5 p-1 rounded-xl mb-6">
+                    <form action={action} className="space-y-5">
+                        <div>
+                            <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">Email</label>
+                            <input
+                                id="email"
+                                name="email"
+                                type="email"
+                                autoComplete="email"
+                                required
+                                placeholder="you@example.com"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">Password</label>
+                            <input
+                                id="password"
+                                name="password"
+                                type="password"
+                                autoComplete="current-password"
+                                required
+                                placeholder="••••••••"
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                            />
+                        </div>
                         <button
-                            onClick={() => setView("password")}
-                            className={`flex-1 py-2 text-xs font-medium rounded-lg transition-all ${view === "password" ? "bg-white/10 text-white shadow-sm" : "text-slate-400 hover:text-slate-200"}`}
+                            type="submit"
+                            disabled={pending}
+                            className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-lg shadow-blue-600/25 hover:shadow-blue-500/30 mt-2"
                         >
-                            Password
+                            {pending ? "Signing in…" : "Sign In"}
                         </button>
-                        <button
-                            onClick={() => setView("magic-link")}
-                            className={`flex-1 py-2 text-xs font-medium rounded-lg transition-all ${view === "magic-link" ? "bg-white/10 text-white shadow-sm" : "text-slate-400 hover:text-slate-200"}`}
-                        >
-                            Magic Link
-                        </button>
-                    </div>
-
-                    {view === "password" ? (
-                        <form action={action} className="space-y-5">
-                            <div>
-                                <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">Email</label>
-                                <input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    autoComplete="email"
-                                    required
-                                    placeholder="you@example.com"
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">Password</label>
-                                <input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    autoComplete="current-password"
-                                    required
-                                    placeholder="••••••••"
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
-                                />
-                            </div>
-                            <button
-                                type="submit"
-                                disabled={pending}
-                                className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-lg shadow-blue-600/25 hover:shadow-blue-500/30 mt-2"
-                            >
-                                {pending ? "Signing in…" : "Sign In"}
-                            </button>
-                        </form>
-                    ) : (
-                        <form action={emailAction} className="space-y-5">
-                            <div>
-                                <label htmlFor="magic-email" className="block text-sm font-medium text-slate-300 mb-2">Email address</label>
-                                <input
-                                    id="magic-email"
-                                    name="email"
-                                    type="email"
-                                    required
-                                    placeholder="you@example.com"
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
-                                />
-                            </div>
-                            <button
-                                type="submit"
-                                disabled={emailPending}
-                                className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl transition-all duration-200 shadow-lg shadow-blue-600/25 hover:shadow-blue-500/30 mt-2"
-                            >
-                                {emailPending ? "Sending Link…" : "Send Magic Link"}
-                            </button>
-                            <p className="text-center text-xs text-slate-500">
-                                We'll email you a magic link for a password-free sign in.
-                            </p>
-                        </form>
-                    )}
+                    </form>
                 </div>
 
                 <p className="text-center text-sm text-slate-400 mt-6">
