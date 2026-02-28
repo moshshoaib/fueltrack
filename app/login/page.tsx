@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, Suspense } from "react"
 import { login, signInWithGoogle } from "@/lib/actions/auth"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
