@@ -1,6 +1,8 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import GitHub from "next-auth/providers/github"
+import Google from "next-auth/providers/google"
+import Resend from "next-auth/providers/resend"
 import { DrizzleAdapter } from "@auth/drizzle-adapter"
 import { db } from "@/lib/db"
 import { users } from "@/lib/schema"
@@ -14,6 +16,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         GitHub({
             clientId: process.env.GITHUB_CLIENT_ID,
             clientSecret: process.env.GITHUB_CLIENT_SECRET,
+        }),
+        Google({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        }),
+        Resend({
+            apiKey: process.env.RESEND_API_KEY,
+            from: "no-reply@resend.dev", // Using default resend domain for now
         }),
         Credentials({
             name: "Credentials",

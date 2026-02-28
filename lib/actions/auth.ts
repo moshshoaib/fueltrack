@@ -64,6 +64,30 @@ export async function login(
     }
 }
 
+export async function signInWithGoogle() {
+    await signIn("google", { redirectTo: "/" })
+}
+
+export async function signInWithEmail(
+    _state: ActionState,
+    formData: FormData
+): Promise<ActionState> {
+    const email = formData.get("email") as string
+    if (!email) return { error: "Email is required" }
+
+    try {
+        await signIn("resend", {
+            email,
+            redirectTo: "/login?sent=true",
+        })
+    } catch (error) {
+        if (error instanceof AuthError) {
+            return { error: "Failed to send magic link" }
+        }
+        throw error
+    }
+}
+
 export async function logout() {
     await signOut({ redirectTo: "/login" })
 }
