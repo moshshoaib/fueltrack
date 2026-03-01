@@ -7,8 +7,9 @@ import {
     Clock01Icon,
     PlusSignCircleIcon,
     ChartHistogramIcon,
-    Car01Icon,
+    UserCircleIcon,
     FuelStationIcon,
+    Car01Icon,
 } from "@hugeicons/core-free-icons"
 
 interface DesktopSidebarProps {
@@ -18,10 +19,10 @@ interface DesktopSidebarProps {
 
 const tabs = [
     { id: "dashboard", label: "Home", icon: Home01Icon },
-    { id: "history", label: "Activity", icon: Clock01Icon },
+    { id: "activity", label: "Activity", icon: Clock01Icon },
     { id: "add", label: "New Log", icon: PlusSignCircleIcon },
-    { id: "analytics", label: "Insights", icon: ChartHistogramIcon },
     { id: "garage", label: "Garage", icon: Car01Icon },
+    { id: "settings", label: "Profile", icon: UserCircleIcon },
 ]
 
 export function DesktopSidebar({ activeTab, onTabChange }: DesktopSidebarProps) {

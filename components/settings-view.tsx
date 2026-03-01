@@ -147,7 +147,7 @@ export function SettingsView({ onBack }: SettingsViewProps) {
             <section className="flex flex-col gap-3 animate-m3-fade-in" style={{ animationDelay: "200ms" }}>
                 <SectionLabel icon={InformationCircleIcon} label="Application Info" />
                 <div className="rounded-3xl bg-surface-container-low overflow-hidden divide-y divide-border/20 border border-border/20">
-                    <InfoRow label="Version" value="2.1 Modernized" />
+                    <InfoRow label="Version" value="2.2 Glass Update" />
                     <InfoRow label="Environment" value="Production" />
                 </div>
             </section>

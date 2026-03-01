@@ -6,12 +6,12 @@ const CurrencyContext = createContext<{
     currency: string
     setCurrency: (currency: string) => void
 }>({
-    currency: "৳",
+    currency: "BDT ",
     setCurrency: () => { },
 })
 
 export const currencies = [
-    { value: "৳", label: "BDT (৳)" },
+    { value: "BDT ", label: "BDT (৳)" },
     { value: "$", label: "USD ($)" },
     { value: "€", label: "EUR (€)" },
     { value: "£", label: "GBP (£)" },
@@ -19,7 +19,7 @@ export const currencies = [
 ]
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
-    const [currency, setCurrencyState] = useState("৳")
+    const [currency, setCurrencyState] = useState("BDT ")
 
     useEffect(() => {
         const saved = localStorage.getItem("app_currency")

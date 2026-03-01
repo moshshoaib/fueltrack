@@ -7,12 +7,14 @@ import {
   Loading03Icon,
   FuelStationIcon,
   CloudIcon,
+  ArrowRight01Icon,
 } from "@hugeicons/core-free-icons"
 import { cn } from "@/lib/utils"
 import { useFuelEntries } from "@/lib/hooks/use-fuel-entries"
 import { useCurrency } from "@/components/currency-provider"
 import { useVehicles } from "@/components/auth/vehicle-provider"
-import { VehicleSelector } from "@/components/vehicle-selector"
+import { VehicleForm } from "@/components/vehicle-form"
+import { getVehicleIcon } from "@/components/vehicle-icon"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 
@@ -23,12 +25,14 @@ interface AddEntryViewProps {
 const fuelTypes = ["Petrol", "Diesel", "Premium", "E85"]
 
 export function AddEntryView({ onSuccess }: AddEntryViewProps) {
-  const { selectedVehicle } = useVehicles()
-  const { addEntry } = useFuelEntries("monthly", selectedVehicle?.id)
+  const { vehicles, selectedVehicle, setSelectedVehicleId, refresh: refreshVehicles } = useVehicles()
+  const [targetVehicleId, setTargetVehicleId] = useState(selectedVehicle?.id || "")
+  const { addEntry } = useFuelEntries("monthly", targetVehicleId)
   const { currency } = useCurrency()
   const { data: session } = useSession()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [isAddingFirstVehicle, setIsAddingFirstVehicle] = useState(false)
   const [selectedFuelType, setSelectedFuelType] = useState("Petrol")
 
   const [form, setForm] = useState({
@@ -39,6 +43,13 @@ export function AddEntryView({ onSuccess }: AddEntryViewProps) {
     station: "",
     notes: "",
   })
+
+  // Sync targetVehicleId when selectedVehicle changes (e.g. on mount)
+  useEffect(() => {
+    if (selectedVehicle?.id && !targetVehicleId) {
+      setTargetVehicleId(selectedVehicle.id)
+    }
+  }, [selectedVehicle, targetVehicleId])
 
   useEffect(() => {
     setForm((prev) => ({ ...prev, date: new Date().toISOString().split("T")[0] }))
@@ -70,6 +81,27 @@ export function AddEntryView({ onSuccess }: AddEntryViewProps) {
 
   const updateField = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }))
 
+  if (vehicles.length === 0 || isAddingFirstVehicle) {
+    return (
+      <div className="flex flex-col gap-6 px-4 pb-28 pt-6 max-w-lg mx-auto md:px-0">
+        <header className="flex flex-col gap-1 animate-m3-fade-in">
+          <h1 className="text-xl font-bold tracking-tight text-foreground">Welcome! 🚗</h1>
+          <p className="text-[11px] text-muted-foreground mt-0.5">Let's add your first vehicle to start tracking.</p>
+        </header>
+
+        <div className="animate-m3-scale-in">
+          <VehicleForm
+            onCancel={() => { }}
+            onSuccess={() => {
+              setIsAddingFirstVehicle(false)
+              refreshVehicles()
+            }}
+          />
+        </div>
+      </div>
+    )
+  }
+
   if (showSuccess) {
     return (
       <div className="flex flex-col items-center justify-center gap-5 px-4 pb-28 pt-32 max-w-md mx-auto animate-m3-scale-in">
@@ -95,7 +127,6 @@ export function AddEntryView({ onSuccess }: AddEntryViewProps) {
             Record your fill-up
           </p>
         </div>
-        <VehicleSelector />
       </header>
 
       {/* Cloud sync prompt for non-authenticated users */}
@@ -146,6 +177,29 @@ export function AddEntryView({ onSuccess }: AddEntryViewProps) {
                 {type}
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* Vehicle Selection Field */}
+        <div className="flex flex-col gap-2">
+          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-0.5">Vehicle</label>
+          <div className="relative">
+            <select
+              value={targetVehicleId}
+              onChange={(e) => {
+                const id = e.target.value
+                setTargetVehicleId(id)
+                setSelectedVehicleId(id)
+              }}
+              className="w-full h-12 rounded-xl border border-border bg-surface-container-low px-4 text-sm text-foreground appearance-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all font-medium"
+            >
+              {vehicles.map((v) => (
+                <option key={v.id} value={v.id}>{v.name}</option>
+              ))}
+            </select>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
+              <HugeiconsIcon icon={ArrowRight01Icon} className="size-3.5 rotate-90" strokeWidth={2} />
+            </div>
           </div>
         </div>
 

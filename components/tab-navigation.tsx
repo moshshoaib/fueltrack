@@ -7,6 +7,7 @@ import {
   Clock01Icon,
   PlusSignCircleIcon,
   ChartHistogramIcon,
+  UserCircleIcon,
   Car01Icon,
 } from "@hugeicons/core-free-icons"
 
@@ -17,10 +18,10 @@ interface TabNavigationProps {
 
 const tabs = [
   { id: "dashboard", label: "Home", icon: Home01Icon },
-  { id: "history", label: "Logs", icon: Clock01Icon },
+  { id: "activity", label: "Activity", icon: Clock01Icon },
   { id: "add", label: "Fuel", icon: PlusSignCircleIcon, isFab: true },
-  { id: "analytics", label: "Stats", icon: ChartHistogramIcon },
   { id: "garage", label: "Garage", icon: Car01Icon },
+  { id: "settings", label: "Profile", icon: UserCircleIcon },
 ]
 
 export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {

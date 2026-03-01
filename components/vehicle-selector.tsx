@@ -28,7 +28,7 @@ export function VehicleSelector() {
     if (vehicles.length === 0) return null
 
     return (
-        <div className="relative" ref={dropdownRef}>
+        <div className={cn("relative", open && "z-[999]")} ref={dropdownRef}>
             <button
                 onClick={() => setOpen(!open)}
                 className="m3-state-layer flex items-center gap-1.5 sm:gap-2 rounded-full bg-surface-container-high px-2.5 sm:px-3.5 h-9 text-[11px] sm:text-xs font-medium text-foreground transition-colors"
@@ -43,7 +43,10 @@ export function VehicleSelector() {
             </button>
 
             {open && (
-                <div className="absolute right-0 top-full mt-1.5 z-50 min-w-[200px] rounded-2xl bg-surface-container-high p-1.5 shadow-lg animate-in fade-in-0 zoom-in-95 slide-in-from-top-2">
+                <div
+                    className="absolute right-0 top-full mt-3 z-[9999] min-w-[260px] rounded-[32px] bg-[#08090a]/80 border border-white/20 shadow-[0_40px_100px_rgba(0,0,0,0.8)] p-3 animate-in fade-in-0 zoom-in-95 slide-in-from-top-3"
+                    style={{ backdropFilter: 'blur(64px)', WebkitBackdropFilter: 'blur(64px)' }}
+                >
                     <button
                         onClick={() => {
                             setSelectedVehicleId("all")

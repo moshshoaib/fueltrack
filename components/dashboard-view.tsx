@@ -11,19 +11,16 @@ import {
   FuelStationIcon,
   FuelIcon,
   Target02Icon,
-  UserCircleIcon,
-  ArrowRight01Icon,
 } from "@hugeicons/core-free-icons"
 import { useVehicles } from "@/components/auth/vehicle-provider"
 import { useCurrency } from "@/components/currency-provider"
 import { useSession } from "next-auth/react"
 
 interface DashboardViewProps {
-  onOpenSettings: () => void
   onAddEntry: () => void
 }
 
-export function DashboardView({ onOpenSettings, onAddEntry }: DashboardViewProps) {
+export function DashboardView({ onAddEntry }: DashboardViewProps) {
   const { vehicles, selectedVehicle } = useVehicles()
   const { currency } = useCurrency()
   const { data: session } = useSession()
@@ -47,8 +44,8 @@ export function DashboardView({ onOpenSettings, onAddEntry }: DashboardViewProps
 
   return (
     <div className="flex flex-col gap-6 px-4 pb-28 pt-6 max-w-2xl mx-auto md:px-0">
-      <header className="flex items-start justify-between gap-4 animate-m3-fade-in">
-        <div className="flex flex-col gap-1 min-w-0">
+      <header className="flex items-start justify-between gap-4 animate-m3-fade-in relative z-50">
+        <div className="flex flex-col gap-1 min-w-0 text-left">
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-xl font-bold tracking-tight text-foreground leading-tight truncate">
               Hey, {username}!
@@ -59,23 +56,11 @@ export function DashboardView({ onOpenSettings, onAddEntry }: DashboardViewProps
               </span>
             )}
           </div>
-          <p className="text-[11px] text-muted-foreground truncate">Welcome back to your garage</p>
+          <p className="text-[11px] text-muted-foreground truncate">Track your fuel game efficiently</p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
           {vehicles.length > 0 && <VehicleSelector />}
-          <button
-            onClick={onOpenSettings}
-            className="m3-state-layer relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-container-low border border-border/50 text-foreground overflow-hidden hover:border-primary/50 transition-colors"
-          >
-            {session?.user?.image ? (
-              <img src={session.user.image} alt="Profile" className="w-full h-full object-cover" />
-            ) : session?.user ? (
-              <span className="font-bold text-xs text-primary">{userInitial}</span>
-            ) : (
-              <HugeiconsIcon icon={UserCircleIcon} className="size-[20px]" strokeWidth={1.5} />
-            )}
-          </button>
         </div>
       </header>
 

@@ -2,21 +2,29 @@
 
 import { useState } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Car01Icon, PlusSignCircleIcon, Tick02Icon } from "@hugeicons/core-free-icons"
+import { Car01Icon, PlusSignCircleIcon, Tick02Icon, ArrowLeft02Icon } from "@hugeicons/core-free-icons"
 import { useVehicles } from "@/components/auth/vehicle-provider"
 import { VehicleForm } from "@/components/vehicle-form"
 import { Vehicle } from "@/lib/types"
 import { getVehicleIcon } from "@/components/vehicle-icon"
 
-export function GarageView() {
+export function GarageView({ onBack }: { onBack?: () => void }) {
     const { vehicles, refresh } = useVehicles()
     const [isAddingVehicle, setIsAddingVehicle] = useState(false)
 
     return (
         <div className="flex flex-col gap-6 px-4 pb-28 pt-6 max-w-2xl mx-auto md:px-0">
-            <header className="flex flex-col gap-0.5 animate-m3-fade-in">
-                <h1 className="text-xl font-bold tracking-tight text-foreground">Your Garage 🚘</h1>
-                <p className="text-xs text-muted-foreground mt-0.5">Manage the vehicles in your garage</p>
+            <header className="flex flex-col gap-4 animate-m3-fade-in">
+                {onBack && (
+                    <button onClick={onBack} className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-widest w-max">
+                        <HugeiconsIcon icon={ArrowLeft02Icon} className="size-3.5" strokeWidth={2.5} />
+                        Back
+                    </button>
+                )}
+                <div className="flex flex-col gap-0.5">
+                    <h1 className="text-xl font-bold tracking-tight text-foreground">Your Garage 🚘</h1>
+                    <p className="text-xs text-muted-foreground mt-0.5">Manage the vehicles in your garage</p>
+                </div>
             </header>
 
             {isAddingVehicle ? (

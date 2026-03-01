@@ -5,8 +5,7 @@ import { DesktopSidebar } from "@/components/desktop-sidebar"
 import { TabNavigation } from "@/components/tab-navigation"
 import { DashboardView } from "@/components/dashboard-view"
 import { AddEntryView } from "@/components/add-entry-view"
-import { HistoryView } from "@/components/history-view"
-import { AnalyticsView } from "@/components/analytics-view"
+import { ActivityView } from "@/components/activity-view"
 import { SettingsView } from "@/components/settings-view"
 import { GarageView } from "@/components/garage-view"
 
@@ -22,14 +21,12 @@ export default function FuelTrackerApp() {
           <main className="flex-1">
             {activeTab === "dashboard" && (
               <DashboardView
-                onOpenSettings={() => setActiveTab("settings")}
                 onAddEntry={() => setActiveTab("add")}
               />
             )}
             {activeTab === "add" && <AddEntryView onSuccess={() => setActiveTab("dashboard")} />}
-            {activeTab === "history" && <HistoryView />}
-            {activeTab === "analytics" && <AnalyticsView />}
-            {activeTab === "garage" && <GarageView />}
+            {activeTab === "activity" && <ActivityView />}
+            {activeTab === "garage" && <GarageView onBack={() => setActiveTab("dashboard")} />}
             {activeTab === "settings" && <SettingsView onBack={() => setActiveTab("dashboard")} />}
           </main>
           {activeTab !== "settings" && (
