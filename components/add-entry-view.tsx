@@ -139,7 +139,7 @@ export function AddEntryView({ onSuccess }: AddEntryViewProps) {
                 className={cn(
                   "rounded-full py-2 text-xs font-medium transition-all duration-200",
                   selectedFuelType === type
-                    ? "bg-primary text-primary-foreground shadow-sm glow-primary-sm"
+                    ? "bg-primary-container text-on-primary-container shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >

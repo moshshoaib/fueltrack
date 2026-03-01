@@ -114,7 +114,7 @@ export function AnalyticsView() {
             className={cn(
               "rounded-full py-2 text-xs font-medium transition-all duration-200",
               viewPeriod === p.id
-                ? "bg-secondary text-secondary-foreground shadow-sm"
+                ? "bg-primary-container text-on-primary-container shadow-sm underline-offset-4"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
