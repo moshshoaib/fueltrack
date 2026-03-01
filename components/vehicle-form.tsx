@@ -10,23 +10,25 @@ import {
 import { useVehicles } from "@/components/auth/vehicle-provider"
 import { vehicleIcons, getVehicleIcon } from "@/components/vehicle-icon"
 import { cn } from "@/lib/utils"
+import { Vehicle } from "@/lib/types"
 
 interface VehicleFormProps {
+    vehicle?: Vehicle
     onCancel: () => void
     onSuccess: () => void
 }
 
-export function VehicleForm({ onCancel, onSuccess }: VehicleFormProps) {
-    const { addVehicle } = useVehicles()
+export function VehicleForm({ vehicle, onCancel, onSuccess }: VehicleFormProps) {
+    const { addVehicle, updateVehicle } = useVehicles()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState("")
     const [form, setForm] = useState({
-        name: "",
-        make: "",
-        model: "",
-        year: "",
-        licensePlate: "",
-        icon: "car",
+        name: vehicle?.name || "",
+        make: vehicle?.make || "",
+        model: vehicle?.model || "",
+        year: vehicle?.year?.toString() || "",
+        licensePlate: vehicle?.license_plate || "",
+        icon: vehicle?.icon || "car",
     })
 
     const updateField = (field: string, value: string) => {
@@ -44,17 +46,23 @@ export function VehicleForm({ onCancel, onSuccess }: VehicleFormProps) {
         setError("")
 
         try {
-            await addVehicle({
+            const data = {
                 name: form.name.trim(),
                 make: form.make.trim() || undefined,
                 model: form.model.trim() || undefined,
                 year: form.year ? parseInt(form.year) : undefined,
                 licensePlate: form.licensePlate.trim() || undefined,
                 icon: form.icon,
-            })
+            }
+
+            if (vehicle) {
+                await updateVehicle(vehicle.id, data)
+            } else {
+                await addVehicle(data)
+            }
             onSuccess()
         } catch (err: any) {
-            setError(err.message || "Failed to add vehicle")
+            setError(err.message || "Failed to save vehicle")
         } finally {
             setIsSubmitting(false)
         }
@@ -68,8 +76,8 @@ export function VehicleForm({ onCancel, onSuccess }: VehicleFormProps) {
                         <HugeiconsIcon icon={getVehicleIcon(form.icon)} className="size-[18px]" strokeWidth={1.5} />
                     </div>
                     <div>
-                        <h3 className="text-sm font-medium text-foreground">New Vehicle</h3>
-                        <p className="text-[11px] text-muted-foreground">Add vehicle details</p>
+                        <h3 className="text-sm font-medium text-foreground">{vehicle ? "Edit Vehicle" : "New Vehicle"}</h3>
+                        <p className="text-[11px] text-muted-foreground">{vehicle ? "Update vehicle details" : "Add vehicle details"}</p>
                     </div>
                 </div>
                 <button
@@ -183,7 +191,7 @@ export function VehicleForm({ onCancel, onSuccess }: VehicleFormProps) {
                         className="m3-state-layer flex-1 flex items-center justify-center gap-2 h-10 rounded-full bg-primary text-primary-foreground text-sm font-medium shadow-sm transition-all disabled:opacity-40"
                     >
                         {isSubmitting && <HugeiconsIcon icon={Loading03Icon} className="size-4 animate-spin" />}
-                        {isSubmitting ? "Adding..." : "Add Vehicle"}
+                        {isSubmitting ? "Saving..." : vehicle ? "Save Changes" : "Add Vehicle"}
                     </button>
                 </div>
             </form>

@@ -14,6 +14,8 @@ interface VehicleContextType {
     isLoading: boolean
     refresh: () => void
     addVehicle: (data: Partial<Vehicle> & { licensePlate?: string }) => Promise<boolean>
+    updateVehicle: (id: string, data: Partial<Vehicle>) => Promise<boolean>
+    deleteVehicle: (id: string) => Promise<boolean>
 }
 
 const VehicleContext = createContext<VehicleContextType | undefined>(undefined)
@@ -118,6 +120,44 @@ export function VehicleProvider({ children }: { children: React.ReactNode }) {
         }
     }
 
+    const updateVehicle = async (id: string, data: Partial<Vehicle>) => {
+        if (isAuthenticated) {
+            const res = await fetch(`/api/vehicles/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            })
+            if (!res.ok) throw new Error("Failed to update vehicle")
+            mutate()
+            return true
+        } else {
+            const updated = guestVehicles.map((v) => (v.id === id ? { ...v, ...data } : v))
+            setGuestVehicles(updated)
+            localStorage.setItem("guest_vehicles", JSON.stringify(updated))
+            return true
+        }
+    }
+
+    const deleteVehicle = async (id: string) => {
+        if (isAuthenticated) {
+            const res = await fetch(`/api/vehicles/${id}`, {
+                method: "DELETE",
+            })
+            if (!res.ok) throw new Error("Failed to delete vehicle")
+            mutate()
+            return true
+        } else {
+            const updated = guestVehicles.filter((v) => v.id !== id)
+            setGuestVehicles(updated)
+            localStorage.setItem("guest_vehicles", JSON.stringify(updated))
+            if (selectedVehicleId === id) {
+                const nextId = updated[0]?.id || null
+                setSelectedVehicleId(nextId)
+            }
+            return true
+        }
+    }
+
     return (
         <VehicleContext.Provider
             value={{
@@ -127,6 +167,8 @@ export function VehicleProvider({ children }: { children: React.ReactNode }) {
                 isLoading,
                 refresh: mutate,
                 addVehicle,
+                updateVehicle,
+                deleteVehicle,
             }}
         >
             {children}
