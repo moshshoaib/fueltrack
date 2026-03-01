@@ -56,8 +56,9 @@ export function VehicleSelector() {
                                 : "text-foreground"
                         )}
                     >
+                        <HugeiconsIcon icon={Car01Icon} className="size-4 shrink-0 text-primary/60" strokeWidth={1.5} />
                         <div className="flex flex-col items-start min-w-0">
-                            <span className="text-[13px] truncate w-full pl-7">All Vehicles</span>
+                            <span className="text-[13px] truncate w-full">All Vehicles</span>
                         </div>
                     </button>
                     <div className="h-px bg-border/50 my-1 mx-2" />
