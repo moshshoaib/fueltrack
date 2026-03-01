@@ -60,3 +60,20 @@ export const verificationTokens = pgTable(
   },
   (vt) => [primaryKey({ columns: [vt.identifier, vt.token] })]
 )
+
+export const vehicles = pgTable("vehicle", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  make: text("make"),
+  model: text("model"),
+  year: integer("year"),
+  licensePlate: text("license_plate"),
+  isDefault: boolean("is_default").default(false),
+  icon: text("icon").default("car"),
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+})

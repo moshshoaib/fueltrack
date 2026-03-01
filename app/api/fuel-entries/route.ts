@@ -15,14 +15,25 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const limit = searchParams.get("limit") || "50"
   const offset = searchParams.get("offset") || "0"
+  const vehicleId = searchParams.get("vehicleId")
 
   try {
-    const entries = await sql`
-      SELECT * FROM fuel_entries 
-      WHERE user_id = ${userId}
-      ORDER BY date DESC, created_at DESC
-      LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
-    `
+    let entries
+    if (vehicleId) {
+      entries = await sql`
+        SELECT * FROM fuel_entries 
+        WHERE user_id = ${userId} AND vehicle_id = ${vehicleId}
+        ORDER BY date DESC, created_at DESC
+        LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
+      `
+    } else {
+      entries = await sql`
+        SELECT * FROM fuel_entries 
+        WHERE user_id = ${userId}
+        ORDER BY date DESC, created_at DESC
+        LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
+      `
+    }
     return NextResponse.json(entries)
   } catch (error) {
     console.error("Failed to fetch fuel entries:", error)
@@ -39,7 +50,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json()
-    const { date, liters, price_per_liter, odometer, fuel_type, station, notes } = body
+    const { date, liters, price_per_liter, odometer, fuel_type, station, notes, vehicle_id } = body
 
     if (!date || !liters || !price_per_liter || !odometer) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
@@ -47,14 +58,25 @@ export async function POST(request: Request) {
 
     const total_cost = (parseFloat(liters) * parseFloat(price_per_liter)).toFixed(2)
 
-    // Get the previous entry for THIS user to calculate distance and efficiency
-    const previousEntries = await sql`
-      SELECT odometer FROM fuel_entries 
-      WHERE user_id = ${userId}
-        AND date <= ${date} 
-        AND odometer < ${parseFloat(odometer)}
-      ORDER BY odometer DESC LIMIT 1
-    `
+    // Get the previous entry for THIS user and THIS vehicle to calculate distance and efficiency
+    let previousEntries
+    if (vehicle_id) {
+      previousEntries = await sql`
+        SELECT odometer FROM fuel_entries 
+        WHERE user_id = ${userId} AND vehicle_id = ${vehicle_id}
+          AND date <= ${date} 
+          AND odometer < ${parseFloat(odometer)}
+        ORDER BY odometer DESC LIMIT 1
+      `
+    } else {
+      previousEntries = await sql`
+        SELECT odometer FROM fuel_entries 
+        WHERE user_id = ${userId} AND vehicle_id IS NULL
+          AND date <= ${date} 
+          AND odometer < ${parseFloat(odometer)}
+        ORDER BY odometer DESC LIMIT 1
+      `
+    }
 
     let distance: number | null = null
     let fuel_efficiency: number | null = null
@@ -69,8 +91,8 @@ export async function POST(request: Request) {
     }
 
     const result = await sql`
-      INSERT INTO fuel_entries (user_id, date, liters, price_per_liter, total_cost, odometer, distance, fuel_efficiency, cost_per_km, fuel_type, station, notes)
-      VALUES (${userId}, ${date}, ${parseFloat(liters)}, ${parseFloat(price_per_liter)}, ${parseFloat(total_cost)}, ${parseFloat(odometer)}, ${distance}, ${fuel_efficiency}, ${cost_per_km}, ${fuel_type || 'Petrol'}, ${station || null}, ${notes || null})
+      INSERT INTO fuel_entries (user_id, vehicle_id, date, liters, price_per_liter, total_cost, odometer, distance, fuel_efficiency, cost_per_km, fuel_type, station, notes)
+      VALUES (${userId}, ${vehicle_id || null}, ${date}, ${parseFloat(liters)}, ${parseFloat(price_per_liter)}, ${parseFloat(total_cost)}, ${parseFloat(odometer)}, ${distance}, ${fuel_efficiency}, ${cost_per_km}, ${fuel_type || 'Petrol'}, ${station || null}, ${notes || null})
       RETURNING *
     `
 

@@ -14,30 +14,52 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url)
   const period = searchParams.get("period") || "monthly"
+  const vehicleId = searchParams.get("vehicleId")
 
   try {
-    // Query 1: Basic totals for this user only
-    const totalsResult = await sql`
-      SELECT 
-        COUNT(*)::int as total_entries,
-        COALESCE(SUM(liters), 0)::float as total_liters,
-        COALESCE(SUM(total_cost), 0)::float as total_cost,
-        COALESCE(SUM(distance), 0)::float as total_distance,
-        COALESCE(AVG(price_per_liter), 0)::float as avg_price_per_liter
-      FROM fuel_entries
-      WHERE user_id = ${userId}
-    `
+    // Query 1: Basic totals for this user/vehicle
+    const totalsResult = vehicleId
+      ? await sql`
+        SELECT 
+          COUNT(*)::int as total_entries,
+          COALESCE(SUM(liters), 0)::float as total_liters,
+          COALESCE(SUM(total_cost), 0)::float as total_cost,
+          COALESCE(SUM(distance), 0)::float as total_distance,
+          COALESCE(AVG(price_per_liter), 0)::float as avg_price_per_liter
+        FROM fuel_entries
+        WHERE user_id = ${userId} AND vehicle_id = ${vehicleId}
+      `
+      : await sql`
+        SELECT 
+          COUNT(*)::int as total_entries,
+          COALESCE(SUM(liters), 0)::float as total_liters,
+          COALESCE(SUM(total_cost), 0)::float as total_cost,
+          COALESCE(SUM(distance), 0)::float as total_distance,
+          COALESCE(AVG(price_per_liter), 0)::float as avg_price_per_liter
+        FROM fuel_entries
+        WHERE user_id = ${userId}
+      `;
 
-    // Query 2: Efficiency stats for this user only
-    const effResult = await sql`
-      SELECT 
-        COALESCE(AVG(fuel_efficiency), 0)::float as avg_efficiency,
-        COALESCE(AVG(cost_per_km), 0)::float as avg_cost_per_km,
-        COALESCE(MAX(fuel_efficiency), 0)::float as best_efficiency,
-        COALESCE(MIN(fuel_efficiency), 0)::float as worst_efficiency
-      FROM fuel_entries
-      WHERE user_id = ${userId} AND fuel_efficiency IS NOT NULL
-    `
+    // Query 2: Efficiency stats for this user/vehicle
+    const effResult = vehicleId
+      ? await sql`
+        SELECT 
+          COALESCE(AVG(fuel_efficiency), 0)::float as avg_efficiency,
+          COALESCE(AVG(cost_per_km), 0)::float as avg_cost_per_km,
+          COALESCE(MAX(fuel_efficiency), 0)::float as best_efficiency,
+          COALESCE(MIN(fuel_efficiency), 0)::float as worst_efficiency
+        FROM fuel_entries
+        WHERE user_id = ${userId} AND vehicle_id = ${vehicleId} AND fuel_efficiency IS NOT NULL
+      `
+      : await sql`
+        SELECT 
+          COALESCE(AVG(fuel_efficiency), 0)::float as avg_efficiency,
+          COALESCE(AVG(cost_per_km), 0)::float as avg_cost_per_km,
+          COALESCE(MAX(fuel_efficiency), 0)::float as best_efficiency,
+          COALESCE(MIN(fuel_efficiency), 0)::float as worst_efficiency
+        FROM fuel_entries
+        WHERE user_id = ${userId} AND fuel_efficiency IS NOT NULL
+      `;
 
     const summary = {
       total_entries: totalsResult[0]?.total_entries ?? 0,
@@ -51,53 +73,98 @@ export async function GET(request: Request) {
       worst_efficiency: effResult[0]?.worst_efficiency ?? 0,
     }
 
-    // Period breakdown for this user only
+    // Period breakdown for this user/vehicle
     let periodData
     if (period === "daily") {
-      periodData = await sql`
-        SELECT 
-          TO_CHAR(date, 'YYYY-MM-DD') as period,
-          COALESCE(SUM(liters), 0)::float as total_liters,
-          COALESCE(SUM(total_cost), 0)::float as total_cost,
-          COALESCE(SUM(distance), 0)::float as total_distance,
-          AVG(fuel_efficiency)::float as avg_efficiency,
-          COUNT(*)::int as entries_count
-        FROM fuel_entries
-        WHERE user_id = ${userId}
-        GROUP BY date
-        ORDER BY date DESC
-        LIMIT 30
-      `
+      periodData = vehicleId
+        ? await sql`
+          SELECT 
+            TO_CHAR(date, 'YYYY-MM-DD') as period,
+            COALESCE(SUM(liters), 0)::float as total_liters,
+            COALESCE(SUM(total_cost), 0)::float as total_cost,
+            COALESCE(SUM(distance), 0)::float as total_distance,
+            AVG(fuel_efficiency)::float as avg_efficiency,
+            COUNT(*)::int as entries_count
+          FROM fuel_entries
+          WHERE user_id = ${userId} AND vehicle_id = ${vehicleId}
+          GROUP BY date, TO_CHAR(date, 'YYYY-MM-DD')
+          ORDER BY period DESC
+          LIMIT 30
+        `
+        : await sql`
+          SELECT 
+            TO_CHAR(date, 'YYYY-MM-DD') as period,
+            COALESCE(SUM(liters), 0)::float as total_liters,
+            COALESCE(SUM(total_cost), 0)::float as total_cost,
+            COALESCE(SUM(distance), 0)::float as total_distance,
+            AVG(fuel_efficiency)::float as avg_efficiency,
+            COUNT(*)::int as entries_count
+          FROM fuel_entries
+          WHERE user_id = ${userId}
+          GROUP BY date, TO_CHAR(date, 'YYYY-MM-DD')
+          ORDER BY period DESC
+          LIMIT 30
+        `
     } else if (period === "yearly") {
-      periodData = await sql`
-        SELECT 
-          TO_CHAR(date, 'YYYY') as period,
-          COALESCE(SUM(liters), 0)::float as total_liters,
-          COALESCE(SUM(total_cost), 0)::float as total_cost,
-          COALESCE(SUM(distance), 0)::float as total_distance,
-          AVG(fuel_efficiency)::float as avg_efficiency,
-          COUNT(*)::int as entries_count
-        FROM fuel_entries
-        WHERE user_id = ${userId}
-        GROUP BY TO_CHAR(date, 'YYYY')
-        ORDER BY period DESC
-        LIMIT 10
-      `
+      periodData = vehicleId
+        ? await sql`
+          SELECT 
+            TO_CHAR(date, 'YYYY') as period,
+            COALESCE(SUM(liters), 0)::float as total_liters,
+            COALESCE(SUM(total_cost), 0)::float as total_cost,
+            COALESCE(SUM(distance), 0)::float as total_distance,
+            AVG(fuel_efficiency)::float as avg_efficiency,
+            COUNT(*)::int as entries_count
+          FROM fuel_entries
+          WHERE user_id = ${userId} AND vehicle_id = ${vehicleId}
+          GROUP BY TO_CHAR(date, 'YYYY')
+          ORDER BY period DESC
+          LIMIT 10
+        `
+        : await sql`
+          SELECT 
+            TO_CHAR(date, 'YYYY') as period,
+            COALESCE(SUM(liters), 0)::float as total_liters,
+            COALESCE(SUM(total_cost), 0)::float as total_cost,
+            COALESCE(SUM(distance), 0)::float as total_distance,
+            AVG(fuel_efficiency)::float as avg_efficiency,
+            COUNT(*)::int as entries_count
+          FROM fuel_entries
+          WHERE user_id = ${userId}
+          GROUP BY TO_CHAR(date, 'YYYY')
+          ORDER BY period DESC
+          LIMIT 10
+        `
     } else {
-      periodData = await sql`
-        SELECT 
-          TO_CHAR(date, 'YYYY-MM') as period,
-          COALESCE(SUM(liters), 0)::float as total_liters,
-          COALESCE(SUM(total_cost), 0)::float as total_cost,
-          COALESCE(SUM(distance), 0)::float as total_distance,
-          AVG(fuel_efficiency)::float as avg_efficiency,
-          COUNT(*)::int as entries_count
-        FROM fuel_entries
-        WHERE user_id = ${userId}
-        GROUP BY TO_CHAR(date, 'YYYY-MM')
-        ORDER BY period DESC
-        LIMIT 12
-      `
+      periodData = vehicleId
+        ? await sql`
+          SELECT 
+            TO_CHAR(date, 'YYYY-MM') as period,
+            COALESCE(SUM(liters), 0)::float as total_liters,
+            COALESCE(SUM(total_cost), 0)::float as total_cost,
+            COALESCE(SUM(distance), 0)::float as total_distance,
+            AVG(fuel_efficiency)::float as avg_efficiency,
+            COUNT(*)::int as entries_count
+          FROM fuel_entries
+          WHERE user_id = ${userId} AND vehicle_id = ${vehicleId}
+          GROUP BY TO_CHAR(date, 'YYYY-MM')
+          ORDER BY period DESC
+          LIMIT 12
+        `
+        : await sql`
+          SELECT 
+            TO_CHAR(date, 'YYYY-MM') as period,
+            COALESCE(SUM(liters), 0)::float as total_liters,
+            COALESCE(SUM(total_cost), 0)::float as total_cost,
+            COALESCE(SUM(distance), 0)::float as total_distance,
+            AVG(fuel_efficiency)::float as avg_efficiency,
+            COUNT(*)::int as entries_count
+          FROM fuel_entries
+          WHERE user_id = ${userId}
+          GROUP BY TO_CHAR(date, 'YYYY-MM')
+          ORDER BY period DESC
+          LIMIT 12
+        `
     }
 
     return NextResponse.json({ summary, periodData })

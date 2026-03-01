@@ -11,6 +11,20 @@ export interface FuelEntry {
   fuel_type: string
   station: string | null
   notes: string | null
+  vehicle_id: string | null
+  created_at: string
+}
+
+export interface Vehicle {
+  id: string
+  userId: string
+  name: string
+  make: string | null
+  model: string | null
+  year: number | null
+  license_plate: string | null
+  is_default: boolean
+  icon: string | null
   created_at: string
 }
 

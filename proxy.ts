@@ -8,12 +8,10 @@ export default auth((req) => {
         nextUrl.pathname.startsWith("/login") ||
         nextUrl.pathname.startsWith("/register")
 
-    if (!isLoggedIn && !isAuthPage) {
-        return NextResponse.redirect(new URL("/login", nextUrl))
-    }
     if (isLoggedIn && isAuthPage) {
         return NextResponse.redirect(new URL("/", nextUrl))
     }
+    return NextResponse.next()
     return NextResponse.next()
 })
 

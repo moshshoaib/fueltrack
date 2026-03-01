@@ -1,45 +1,33 @@
 import { cn } from "@/lib/utils"
-import type { LucideIcon } from "lucide-react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import type { IconSvgElement } from "@hugeicons/react"
 
 interface StatCardProps {
   label: string
   value: string
   unit: string
-  icon: LucideIcon
-  iconBg?: string
-  iconColor?: string
+  icon: IconSvgElement
+  trend?: "up" | "down" | "neutral"
   className?: string
 }
 
-export function StatCard({
-  label,
-  value,
-  unit,
-  icon: Icon,
-  iconBg = "bg-primary/8",
-  iconColor = "text-primary",
-  className,
-}: StatCardProps) {
+export function StatCard({ label, value, unit, icon, trend, className }: StatCardProps) {
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 rounded-2xl border border-border/70 bg-card p-4 shadow-[0_1px_3px_0_rgba(0,0,0,0.04)]",
+        "flex flex-col gap-3 rounded-2xl bg-surface-container-low p-4 transition-all duration-300 hover:bg-surface-container animate-m3-fade-in",
         className
       )}
     >
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-          {label}
-        </span>
-        <div className={cn("flex h-8 w-8 items-center justify-center rounded-xl", iconBg)}>
-          <Icon className={cn("h-4 w-4", iconColor)} />
+        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <HugeiconsIcon icon={icon} className="size-4" strokeWidth={1.5} />
         </div>
       </div>
-      <div className="flex items-baseline gap-1.5">
-        <span className="font-sans text-[26px] font-bold leading-none tracking-tight text-foreground">
-          {value}
-        </span>
-        <span className="text-[11px] font-medium text-muted-foreground">{unit}</span>
+      <div className="flex items-baseline gap-1.5 min-w-0">
+        <span className="text-[20px] sm:text-[22px] font-bold tracking-tight text-foreground leading-none animate-count-up truncate">{value}</span>
+        <span className="text-[10px] text-muted-foreground font-medium shrink-0">{unit}</span>
       </div>
     </div>
   )

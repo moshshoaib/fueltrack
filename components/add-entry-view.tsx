@@ -1,9 +1,20 @@
 "use client"
 
-import { useState } from "react"
-import { useSWRConfig } from "swr"
-import { Fuel, Check, Loader2 } from "lucide-react"
+import { useState, useEffect } from "react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import {
+  CheckmarkCircle01Icon,
+  Loading03Icon,
+  FuelStationIcon,
+  CloudIcon,
+} from "@hugeicons/core-free-icons"
 import { cn } from "@/lib/utils"
+import { useFuelEntries } from "@/lib/hooks/use-fuel-entries"
+import { useCurrency } from "@/components/currency-provider"
+import { useVehicles } from "@/components/auth/vehicle-provider"
+import { VehicleSelector } from "@/components/vehicle-selector"
+import { useSession } from "next-auth/react"
+import Link from "next/link"
 
 interface AddEntryViewProps {
   onSuccess?: () => void
@@ -12,19 +23,26 @@ interface AddEntryViewProps {
 const fuelTypes = ["Petrol", "Diesel", "Premium", "E85"]
 
 export function AddEntryView({ onSuccess }: AddEntryViewProps) {
-  const { mutate } = useSWRConfig()
+  const { selectedVehicle } = useVehicles()
+  const { addEntry } = useFuelEntries("monthly", selectedVehicle?.id)
+  const { currency } = useCurrency()
+  const { data: session } = useSession()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [selectedFuelType, setSelectedFuelType] = useState("Petrol")
 
   const [form, setForm] = useState({
-    date: new Date().toISOString().split("T")[0],
+    date: "",
     liters: "",
     price_per_liter: "",
     odometer: "",
     station: "",
     notes: "",
   })
+
+  useEffect(() => {
+    setForm((prev) => ({ ...prev, date: new Date().toISOString().split("T")[0] }))
+  }, [])
 
   const totalCost =
     form.liters && form.price_per_liter
@@ -37,34 +55,11 @@ export function AddEntryView({ onSuccess }: AddEntryViewProps) {
 
     setIsSubmitting(true)
     try {
-      const response = await fetch("/api/fuel-entries", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          fuel_type: selectedFuelType,
-        }),
-      })
-
-      if (response.ok) {
+      const ok = await addEntry({ ...form, fuel_type: selectedFuelType })
+      if (ok) {
         setShowSuccess(true)
-        setForm({
-          date: new Date().toISOString().split("T")[0],
-          liters: "",
-          price_per_liter: "",
-          odometer: "",
-          station: "",
-          notes: "",
-        })
-        mutate("/api/fuel-entries?limit=5")
-        mutate("/api/fuel-entries?limit=50")
-        mutate("/api/fuel-entries/summary?period=daily")
-        mutate("/api/fuel-entries/summary?period=monthly")
-        mutate("/api/fuel-entries/summary?period=yearly")
-        setTimeout(() => {
-          setShowSuccess(false)
-          onSuccess?.()
-        }, 1500)
+        setForm({ date: new Date().toISOString().split("T")[0], liters: "", price_per_liter: "", odometer: "", station: "", notes: "" })
+        setTimeout(() => { setShowSuccess(false); onSuccess?.() }, 1500)
       }
     } catch (error) {
       console.error("Failed to add entry:", error)
@@ -73,209 +68,145 @@ export function AddEntryView({ onSuccess }: AddEntryViewProps) {
     }
   }
 
-  const updateField = (field: string, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }))
-  }
+  const updateField = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }))
 
   if (showSuccess) {
     return (
-      <div className="flex flex-col items-center justify-center gap-5 px-5 pb-28 pt-32">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-accent/12">
-          <Check className="h-10 w-10 text-accent" />
+      <div className="flex flex-col items-center justify-center gap-5 px-4 pb-28 pt-32 max-w-md mx-auto animate-m3-scale-in">
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/15 text-primary glow-primary">
+          <HugeiconsIcon icon={CheckmarkCircle01Icon} className="size-10" strokeWidth={1.5} />
         </div>
         <div className="flex flex-col items-center gap-1">
-          <p className="text-lg font-bold text-foreground">Entry Added</p>
-          <p className="text-[13px] text-muted-foreground">
-            Your fuel fill-up has been recorded
-          </p>
+          <p className="text-lg font-bold text-foreground">Nice fill! 🔥</p>
+          <p className="text-sm text-muted-foreground">Entry logged. Keep the streak going!</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col gap-6 px-5 pb-28 pt-6">
-      {/* Header */}
-      <header className="flex flex-col gap-1">
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-foreground">
-          Add Fill-up
-        </h1>
-        <p className="text-[13px] font-medium text-muted-foreground">
-          Record your latest fuel purchase
-        </p>
+    <div className="flex flex-col gap-6 px-4 pb-28 pt-6 max-w-lg mx-auto md:px-0">
+      <header className="flex items-center justify-between animate-m3-fade-in">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">
+            Log Fuel ⛽
+          </h1>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            Record your fill-up
+          </p>
+        </div>
+        <VehicleSelector />
       </header>
 
-      {/* Total Cost Hero */}
-      <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-border/70 bg-card px-6 py-8 shadow-[0_1px_3px_0_rgba(0,0,0,0.04)]">
-        <span className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-          Total Cost
-        </span>
-        <span className="font-mono text-[42px] font-bold leading-none tracking-tighter text-foreground">
-          {totalCost}
+      {/* Cloud sync prompt for non-authenticated users */}
+      {!session?.user && (
+        <div className="flex items-center gap-3 rounded-2xl bg-surface-container-low px-4 py-3 animate-m3-fade-in" style={{ animationDelay: "50ms" }}>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <HugeiconsIcon icon={CloudIcon} className="size-[18px]" strokeWidth={1.5} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-foreground">Want cloud backup?</p>
+            <p className="text-[10px] text-muted-foreground">Sign in to sync across devices</p>
+          </div>
+          <Link
+            href="/login"
+            className="text-xs font-semibold text-primary hover:underline underline-offset-2 shrink-0"
+          >
+            Sign in →
+          </Link>
+        </div>
+      )}
+
+      {/* Cost Preview */}
+      <div className="flex flex-col items-center gap-1 rounded-2xl bg-surface-container-low py-6 animate-m3-scale-in" style={{ animationDelay: "100ms" }}>
+        <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">Total Cost</span>
+        <span className="text-[36px] font-bold tracking-tight text-foreground leading-none mt-1 animate-count-up">
+          {currency}{totalCost}
         </span>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        {/* Fuel Type */}
-        <fieldset className="flex flex-col gap-2.5">
-          <legend className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Fuel Type
-          </legend>
-          <div className="grid grid-cols-4 gap-2">
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5 animate-m3-fade-in" style={{ animationDelay: "150ms" }}>
+        {/* Fuel Type Segmented */}
+        <div className="flex flex-col gap-2">
+          <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-0.5">Fuel Type</label>
+          <div className="grid grid-cols-4 gap-1 p-1 bg-surface-container-low rounded-full">
             {fuelTypes.map((type) => (
               <button
                 key={type}
                 type="button"
                 onClick={() => setSelectedFuelType(type)}
                 className={cn(
-                  "rounded-xl py-2.5 text-[12px] font-semibold transition-all duration-150",
+                  "rounded-full py-2 text-xs font-medium transition-all duration-200",
                   selectedFuelType === type
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                    ? "bg-primary text-primary-foreground shadow-sm glow-primary-sm"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 {type}
               </button>
             ))}
           </div>
-        </fieldset>
-
-        {/* Date */}
-        <div className="flex flex-col gap-2">
-          <label
-            htmlFor="date"
-            className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground"
-          >
-            Date
-          </label>
-          <input
-            id="date"
-            type="date"
-            value={form.date}
-            onChange={(e) => updateField("date", e.target.value)}
-            className="h-12 rounded-xl border border-input bg-card px-4 text-[14px] font-medium text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/20"
-          />
         </div>
 
-        {/* Liters & Price */}
+        <M3Field label="Date" id="date" type="date" value={form.date} onChange={(v) => updateField("date", v)} />
+
         <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-2">
-            <label
-              htmlFor="liters"
-              className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground"
-            >
-              Liters
-            </label>
-            <input
-              id="liters"
-              type="number"
-              step="0.01"
-              inputMode="decimal"
-              placeholder="0.00"
-              value={form.liters}
-              onChange={(e) => updateField("liters", e.target.value)}
-              className="h-12 rounded-xl border border-input bg-card px-4 font-mono text-[14px] font-medium text-foreground placeholder:text-muted-foreground/40 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/20"
-              required
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <label
-              htmlFor="price"
-              className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground"
-            >
-              Price / Liter
-            </label>
-            <input
-              id="price"
-              type="number"
-              step="0.01"
-              inputMode="decimal"
-              placeholder="0.00"
-              value={form.price_per_liter}
-              onChange={(e) => updateField("price_per_liter", e.target.value)}
-              className="h-12 rounded-xl border border-input bg-card px-4 font-mono text-[14px] font-medium text-foreground placeholder:text-muted-foreground/40 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/20"
-              required
-            />
-          </div>
+          <M3Field label="Volume (L)" id="liters" type="number" step="0.01" placeholder="0.00" value={form.liters} onChange={(v) => updateField("liters", v)} required />
+          <M3Field label="Price / L" id="price" type="number" step="0.01" placeholder="0.00" value={form.price_per_liter} onChange={(v) => updateField("price_per_liter", v)} required />
         </div>
 
-        {/* Odometer */}
-        <div className="flex flex-col gap-2">
-          <label
-            htmlFor="odometer"
-            className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground"
-          >
-            Odometer (km)
-          </label>
-          <input
-            id="odometer"
-            type="number"
-            step="0.1"
-            inputMode="decimal"
-            placeholder="Current reading"
-            value={form.odometer}
-            onChange={(e) => updateField("odometer", e.target.value)}
-            className="h-12 rounded-xl border border-input bg-card px-4 font-mono text-[14px] font-medium text-foreground placeholder:text-muted-foreground/40 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/20"
-            required
-          />
-        </div>
+        <M3Field label="Odometer (km)" id="odometer" type="number" step="0.1" placeholder="Current reading" value={form.odometer} onChange={(v) => updateField("odometer", v)} required />
+        <M3Field label="Station" id="station" type="text" placeholder="e.g. Shell" value={form.station} onChange={(v) => updateField("station", v)} />
 
-        {/* Station */}
         <div className="flex flex-col gap-2">
-          <label
-            htmlFor="station"
-            className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground"
-          >
-            Station
-            <span className="ml-1 normal-case tracking-normal text-muted-foreground/60">
-              optional
-            </span>
-          </label>
-          <input
-            id="station"
-            type="text"
-            placeholder="Station name"
-            value={form.station}
-            onChange={(e) => updateField("station", e.target.value)}
-            className="h-12 rounded-xl border border-input bg-card px-4 text-[14px] font-medium text-foreground placeholder:text-muted-foreground/40 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/20"
-          />
-        </div>
-
-        {/* Notes */}
-        <div className="flex flex-col gap-2">
-          <label
-            htmlFor="notes"
-            className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground"
-          >
-            Notes
-            <span className="ml-1 normal-case tracking-normal text-muted-foreground/60">
-              optional
-            </span>
-          </label>
+          <label htmlFor="notes" className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-0.5">Notes</label>
           <textarea
             id="notes"
-            placeholder="Any additional notes..."
             rows={2}
+            placeholder="Optional notes..."
             value={form.notes}
             onChange={(e) => updateField("notes", e.target.value)}
-            className="resize-none rounded-xl border border-input bg-card px-4 py-3 text-[14px] font-medium text-foreground placeholder:text-muted-foreground/40 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-ring/20"
+            className="w-full rounded-xl border border-border bg-transparent px-3.5 py-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all resize-none"
           />
         </div>
 
-        {/* Submit */}
         <button
           type="submit"
           disabled={isSubmitting || !form.liters || !form.price_per_liter || !form.odometer}
-          className="flex h-[52px] items-center justify-center gap-2.5 rounded-2xl bg-primary text-[15px] font-semibold text-primary-foreground shadow-sm transition-all duration-150 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+          className="m3-state-layer flex items-center justify-center gap-2 w-full h-12 rounded-full bg-primary text-primary-foreground font-semibold text-sm glow-primary transition-all disabled:opacity-30 disabled:shadow-none mt-2 active:scale-[0.97]"
         >
           {isSubmitting ? (
-            <Loader2 className="h-[18px] w-[18px] animate-spin" />
+            <HugeiconsIcon icon={Loading03Icon} className="size-5 animate-spin" />
           ) : (
-            <Fuel className="h-[18px] w-[18px]" />
+            <HugeiconsIcon icon={FuelStationIcon} className="size-5" strokeWidth={1.5} />
           )}
-          {isSubmitting ? "Saving..." : "Save Fill-up"}
+          {isSubmitting ? "Logging..." : "Log Entry 🔥"}
         </button>
       </form>
+    </div>
+  )
+}
+
+function M3Field({ label, id, type = "text", step, placeholder, value, onChange, required }: {
+  label: string; id: string; type?: string; step?: string; placeholder?: string; value: string; onChange: (v: string) => void; required?: boolean
+}) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (type === "number" && ["e", "E", "+", "-"].includes(e.key)) {
+      e.preventDefault()
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <label htmlFor={id} className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-0.5">{label}</label>
+      <input
+        id={id} type={type} step={step} placeholder={placeholder} value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={handleKeyDown}
+        required={required}
+        className="w-full h-12 rounded-xl border border-border bg-transparent px-3.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all"
+      />
     </div>
   )
 }

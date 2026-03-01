@@ -1,7 +1,14 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { Fuel, BarChart3, Clock, PlusCircle } from "lucide-react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import {
+  Home01Icon,
+  Clock01Icon,
+  PlusSignCircleIcon,
+  ChartHistogramIcon,
+  Car01Icon,
+} from "@hugeicons/core-free-icons"
 
 interface TabNavigationProps {
   activeTab: string
@@ -9,58 +16,72 @@ interface TabNavigationProps {
 }
 
 const tabs = [
-  { id: "dashboard", label: "Home", icon: Fuel },
-  { id: "history", label: "History", icon: Clock },
-  { id: "add", label: "Add", icon: PlusCircle },
-  { id: "analytics", label: "Stats", icon: BarChart3 },
+  { id: "dashboard", label: "Home", icon: Home01Icon },
+  { id: "history", label: "Logs", icon: Clock01Icon },
+  { id: "add", label: "Fuel", icon: PlusSignCircleIcon, isFab: true },
+  { id: "analytics", label: "Stats", icon: ChartHistogramIcon },
+  { id: "garage", label: "Garage", icon: Car01Icon },
 ]
 
 export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
   return (
     <nav
-      className="fixed bottom-0 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 border-t border-border/60 bg-card/90 backdrop-blur-2xl backdrop-saturate-150"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-surface-container/95 backdrop-blur-xl md:hidden"
       role="tablist"
     >
-      <div className="flex items-stretch justify-around px-1 pb-7 pt-1.5">
+      <div className="flex items-end justify-around px-1 pt-1.5 pb-7">
         {tabs.map((tab) => {
-          const Icon = tab.icon
           const isActive = activeTab === tab.id
-          const isAdd = tab.id === "add"
+
+          if (tab.isFab) {
+            return (
+              <button
+                key={tab.id}
+                role="tab"
+                onClick={() => onTabChange(tab.id)}
+                className={cn(
+                  "relative -mt-5 flex items-center justify-center w-14 h-14 rounded-2xl transition-all duration-300 active:scale-90",
+                  isActive
+                    ? "bg-primary text-primary-foreground glow-primary scale-105"
+                    : "bg-surface-container-high text-foreground"
+                )}
+                aria-label={tab.label}
+                aria-selected={isActive}
+              >
+                <HugeiconsIcon icon={tab.icon} className="size-6" strokeWidth={isActive ? 2.2 : 1.5} />
+              </button>
+            )
+          }
 
           return (
             <button
               key={tab.id}
               role="tab"
               onClick={() => onTabChange(tab.id)}
-              className={cn(
-                "group relative flex flex-col items-center gap-0.5 px-5 py-1 transition-colors duration-150",
-                isActive ? "text-primary" : "text-muted-foreground"
-              )}
+              className="group flex flex-col items-center gap-1 flex-1 transition-all active:scale-90"
               aria-label={tab.label}
               aria-selected={isActive}
             >
-              {isActive && (
-                <span className="absolute -top-1.5 left-1/2 h-[3px] w-6 -translate-x-1/2 rounded-full bg-primary" />
-              )}
               <div
                 className={cn(
-                  "flex h-7 w-7 items-center justify-center transition-transform duration-150",
-                  isAdd && "h-8 w-8",
-                  isActive && "scale-105"
+                  "flex items-center justify-center rounded-full h-8 transition-all duration-300 ease-out",
+                  isActive
+                    ? "w-16 bg-primary/15 text-primary"
+                    : "w-8 bg-transparent text-muted-foreground"
                 )}
               >
-                <Icon
-                  className={cn(
-                    "h-[22px] w-[22px] transition-all duration-150",
-                    isAdd && "h-6 w-6",
-                    isActive ? "stroke-[2.4px]" : "stroke-[1.8px]"
-                  )}
+                <HugeiconsIcon
+                  icon={tab.icon}
+                  className="size-[22px]"
+                  strokeWidth={isActive ? 2.2 : 1.5}
                 />
               </div>
               <span
                 className={cn(
-                  "text-[10px] leading-tight tracking-wide",
-                  isActive ? "font-semibold" : "font-medium"
+                  "text-[10px] leading-none transition-all",
+                  isActive
+                    ? "font-semibold text-primary"
+                    : "font-medium text-muted-foreground"
                 )}
               >
                 {tab.label}
